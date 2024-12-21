@@ -1,6 +1,4 @@
-from scapy.all import IP
-from scapy.all import ICMP
-from scapy.all import sniff
+from scapy.all import IP, ICMP, sniff
 from CovertChannelBase import CovertChannelBase
 
 class MyCovertChannel(CovertChannelBase):
@@ -8,74 +6,55 @@ class MyCovertChannel(CovertChannelBase):
     - You are not allowed to change the file name and class name.
     - You can edit the class in any way you want (e.g. adding helper functions); however, there must be a "send" and a "receive" function, the covert channel will be triggered by calling these functions.
     """
+
     def __init__(self):
         """
-        - You can edit __init__.
+        Initialize the covert channel class.
         """
         super().__init__()
 
-def send(self, parameter1, parameter2, log_file_name):
-    """
-    Overrides the send method of CovertChannelBase to implement the covert channel sender logic.
-    - parameter1: Destination IP or relevant parameter.
-    - parameter2: Delay parameter in milliseconds or other relevant use.
-    - log_file_name: Log file to save the sent message.
-    """
-    # Generate a random binary message and log it
-    binary_message = self.generate_random_binary_message_with_logging(log_file_name)
+    def send(self, destination_ip, inter_packet_delay, log_file_name):
+        binary_message = self.generate_random_binary_message_with_logging(log_file_name)
 
-    # Example usage of parameters
-    destination_ip = parameter1  # Assuming parameter1 stores the IP
-    inter_packet_delay = parameter2 / 1000.0  # Assuming parameter2 is in milliseconds
+        for bit in binary_message:
+            dont_fragment = int(bit)  # 1 or 0
+            packet = IP(dst=destination_ip, flags=dont_fragment) / ICMP()
+            super().send(packet, interface="eth0")
+            self.sleep_random_time_ms(start=inter_packet_delay * 1000, end=(inter_packet_delay + 0.01) * 1000)
 
-    # Send each bit of the binary message
-    for bit in binary_message:
-        # Create a packet with the 'Don't Fragment' flag set or unset based on the bit
-        dont_fragment = int(bit)  # 1 or 0
-        packet = IP(dst=destination_ip, flags=dont_fragment) / ICMP()
+    def receive(self, source_ip, parameter2, parameter3, log_file_name):
+        """
+        - Listen for incoming packets, decode the message based on the 'Don't Fragment' flag in the IP header, and log the received message.
+        """
+        # Initialize a variable to store the received binary message
+        binary_message = ""
 
-        # Use the send function from the base class to send the packet
-        super().send(packet, interface="eth0")
+        def packet_handler(packet):
+            nonlocal binary_message
 
-        # Introduce a delay between packets
-        self.sleep_random_time_ms(start=inter_packet_delay * 1000, end=(inter_packet_delay + 0.01) * 1000)
+            # Filter packets from the expected source and with an IP layer
+            if packet.haslayer(IP) and packet[IP].src == source_ip:  # Assuming parameter1 is the source IP
+                # Extract the 'Don't Fragment' flag (1 or 0)
+                dont_fragment_flag = (packet[IP].flags & 0x2) >> 1
 
+                # Append the extracted bit to the binary message
+                binary_message += str(dont_fragment_flag)
 
-def receive(self, parameter1, parameter2, parameter3, log_file_name):
-    """
-    - Listen for incoming packets, decode the message based on the 'Don't Fragment' flag in the IP header, and log the received message.
-    """
-    from scapy.all import sniff
+        def stop_filter(packet):
+            nonlocal binary_message
+            # Check if the transmission ends (binary for '.')
+            return binary_message.endswith("00101110")  # Binary for '.'
 
-    # Initialize a variable to store the received binary message
-    binary_message = ""
+        # Capture packets until the message is fully received
+        sniff(filter=f"ip src {source_ip}", prn=packet_handler, stop_filter=stop_filter)
 
-    def packet_handler(packet):
-        nonlocal binary_message
+        # Convert the binary message to a string
+        decoded_message = "".join(
+            self.convert_eight_bits_to_character(binary_message[i:i+8])
+            for i in range(0, len(binary_message), 8)
+        )
 
-        # Filter packets from the expected source and with an IP layer
-        if packet.haslayer(IP) and packet[IP].src == parameter1:  # Assuming parameter1 is the source IP
-            # Extract the 'Don't Fragment' flag (1 or 0)
-            dont_fragment_flag = (packet[IP].flags & 0x2) >> 1
+        # Log the decoded message
+        self.log_message(decoded_message, log_file_name)
 
-            # Append the extracted bit to the binary message
-            binary_message += str(dont_fragment_flag)
-
-    def stop_filter(packet):
-        nonlocal binary_message
-        # Check if the transmission ends (binary for '.')
-        return binary_message.endswith("00101110")  # Binary for '.'
-
-    # Capture packets until the message is fully received
-    sniff(filter=f"ip src {parameter1}", prn=packet_handler, stop_filter=stop_filter)
-
-    # Convert the binary message to a string
-    decoded_message = "".join(
-        self.convert_eight_bits_to_character(binary_message[i:i+8])
-        for i in range(0, len(binary_message), 8)
-    )
-
-    # Log the decoded message
-    self.log_message(decoded_message, log_file_name)
-
-    return decoded_message
+        return decoded_message
