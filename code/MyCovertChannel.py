@@ -1,28 +1,25 @@
 from scapy.all import IP, ICMP, sniff
 from CovertChannelBase import CovertChannelBase
+import time
 
 class MyCovertChannel(CovertChannelBase):
-    """
-    - You are not allowed to change the file name and class name.
-    - You can edit the class in any way you want (e.g. adding helper functions); however, there must be a "send" and a "receive" function, the covert channel will be triggered by calling these functions.
-    """
-
     def __init__(self):
-        """
-        Initialize the covert channel class.
-        """
         super().__init__()
 
-    def send(self, destination_ip, inter_packet_delay, log_file_name):
-        binary_message = self.generate_random_binary_message_with_logging(log_file_name)
+    def send(self, destination_ip, log_file_name):
+        # binary_message = self.generate_random_binary_message_with_logging(log_file_name)
+        binary_message = "msg."
+        for letter in binary_message:
+            bin_letter = ord(letter)
+            for i in range (0, 8):
+                dont_fragment = bin_letter & 0b10000000
+                dont_fragment = dont_fragment >> 7
+                bin_letter = bin_letter << 1
+                packet = IP(dst=destination_ip, flags=dont_fragment) / ICMP()
+                super().send(packet, interface="eth0")
+                time.sleep(0.100)
 
-        for bit in binary_message:
-            dont_fragment = int(bit)  # 1 or 0
-            packet = IP(dst=destination_ip, flags=dont_fragment) / ICMP()
-            super().send(packet, interface="eth0")
-            self.sleep_random_time_ms(start=inter_packet_delay * 1000, end=(inter_packet_delay + 0.01) * 1000)
-
-    def receive(self, source_ip, parameter2, parameter3, log_file_name):
+    def receive(self, source_ip, log_file_name):
         """
         - Listen for incoming packets, decode the message based on the 'Don't Fragment' flag in the IP header, and log the received message.
         """

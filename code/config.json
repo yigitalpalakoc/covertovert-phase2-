@@ -3,15 +3,12 @@
   "send": {
     "parameters": {
       "destination_ip": "172.18.0.3",
-      "inter_packet_delay": 1,
       "log_file_name": "Example_UDPTimingInterarrivalChannelSender.log"
     }
   },
   "receive": {
     "parameters": {
       "source_ip": "172.18.0.2",
-      "parameter2": "p2",
-      "parameter3": "p3",
       "log_file_name": "Example_UDPTimingInterarrivalChannelReceiver.log"
     }
   }
