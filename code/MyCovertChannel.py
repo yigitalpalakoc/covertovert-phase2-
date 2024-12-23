@@ -1,4 +1,4 @@
-from scapy.all import IP, ICMP, sniff
+from scapy.all import IP, sniff
 from CovertChannelBase import CovertChannelBase
 import time
 
