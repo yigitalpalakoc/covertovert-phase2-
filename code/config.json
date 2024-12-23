@@ -3,7 +3,7 @@
   "send": {
     "parameters": {
       "destination_ip": "172.18.0.3",
-      "delay": 10,
+      "delay": 1,
       "log_file_name": "Example_UDPTimingInterarrivalChannelSender.log"
     }
   },
