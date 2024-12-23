@@ -28,7 +28,7 @@ class MyCovertChannel(CovertChannelBase):
             nonlocal message_receive, msg, ctr, stop_sniffing
 
             if packet.haslayer(IP) and packet[IP].src == source_ip:
-                # rint(f"Packet flags: {packet[IP].flags}")
+                # print(f"Packet flags: {packet[IP].flags}")
                 dont_fragment_flag = (packet[IP].flags & 0x2) >> 1
                 msg += dont_fragment_flag
                 ctr += 1
