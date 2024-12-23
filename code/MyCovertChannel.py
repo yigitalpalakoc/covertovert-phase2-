@@ -15,7 +15,7 @@ class MyCovertChannel(CovertChannelBase):
                 dont_fragment = bin_letter & 0b10000000
                 dont_fragment = dont_fragment >> 7
                 bin_letter = bin_letter << 1
-                packet = IP(dst=destination_ip, flags=dont_fragment) / ICMP()
+                packet = IP(dst=destination_ip, flags=dont_fragment) / IP()
                 super().send(packet, interface="eth0")
                 time.sleep(0.100)
 
@@ -25,6 +25,7 @@ class MyCovertChannel(CovertChannelBase):
         """
         # Initialize a variable to store the received binary message
         binary_message = ""
+        ctr = 0
 
         def packet_handler(packet):
             nonlocal binary_message
