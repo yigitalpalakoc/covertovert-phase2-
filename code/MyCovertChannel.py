@@ -7,8 +7,10 @@ class MyCovertChannel(CovertChannelBase):
         super().__init__()
 
     def send(self, destination_ip, delay ,log_file_name):
-        message_send = "msg." #TODO
+        message_send = super().generate_random_message()
+        len_msg = len(message_send)
         super().log_message(message_send, log_file_name)
+        start = time.time()
         for letter in message_send:
             bin_letter = ord(letter)
             for i in range (0, 8):
@@ -18,6 +20,9 @@ class MyCovertChannel(CovertChannelBase):
                 packet = IP(dst=destination_ip, flags=dont_fragment) / IP()
                 super().send(packet, interface="eth0")
                 time.sleep(delay/1000)
+        end = time.time()
+        length = end - start
+        print(len_msg*8,"packets in", length, "seconds, avg = ", (len_msg*8)/length, "packets (bits) / second.")
 
     def receive(self, source_ip, log_file_name):
         message_receive = ""
