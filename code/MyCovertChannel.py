@@ -14,10 +14,10 @@ class MyCovertChannel(CovertChannelBase):
         for letter in message_send:
             bin_letter = ord(letter)
             for i in range (0, 8):
-                flags = bin_letter & 0b10000000
-                flags = flags >> 6
+                flag = bin_letter & 0b10000000
+                flag = flag >> 6
                 bin_letter = bin_letter << 1
-                packet = IP(dst=destination_ip, flags=flags) / IP()
+                packet = IP(dst=destination_ip, flags=flag) / IP()
                 super().send(packet, interface="eth0")
                 time.sleep(delay/1000)
         end = time.time()
@@ -33,16 +33,16 @@ class MyCovertChannel(CovertChannelBase):
             nonlocal message_receive, msg, ctr, stop_sniffing
 
             if packet.haslayer(IP) and packet[IP].src == source_ip:
-                # print(f"Packet flags: {packet[IP].flags}")
+                print(f"Packet flags: {packet[IP].flags}")
                 dont_fragment_flag = (packet[IP].flags & 0x2) >> 1
                 msg += dont_fragment_flag
                 ctr += 1
                 if ctr < 8:
-                    msg << 1
+                    msg *= 2
                 elif ctr == 8:
                     letter = chr(msg)
-                    # print(msg)
-                    # print(letter)
+                    print(msg)
+                    print(letter)
                     message_receive += letter
                     msg = 0
                     ctr = 0
