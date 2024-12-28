@@ -4,8 +4,8 @@ import time
 
 class MyCovertChannel(CovertChannelBase):
     def __init__(self):
-        self.key = "M3t0C3ng" # Encryption key
         super().__init__()
+        self.key = "M3t0C3ng" # Encryption key
 
     def xor(self, inp_str, key):
         if isinstance(inp_str, str):
@@ -18,7 +18,7 @@ class MyCovertChannel(CovertChannelBase):
         len_msg = len(message_send)
         
         # Encrypt the message
-        super().log_message(message_send, log_file_name) # Log encrypted message as hex for clarity
+        super().log_message(message_send, log_file_name)
         enc_msg = self.xor(message_send[:-1], self.key) + b"."
         
         start = time.time()
