@@ -7,19 +7,17 @@ class MyCovertChannel(CovertChannelBase):
         super().__init__()
         self.key = "M3t0C3ng" # Encryption key
 
-    def xor(self, inp_str, key):
-        if isinstance(inp_str, str):
-            inp_str = inp_str.encode()  # Convert to bytes if it's a string
-        key_len = len(key)
-        return bytes([inp_str[i] ^ ord(key[i % key_len]) for i in range(len(inp_str))])
-
     def send(self, destination_ip, delay, log_file_name):
         message_send = super().generate_random_message()
         len_msg = len(message_send)
+        key_len = len(self.key)
+        enc_msg = bytearray(message_send.encode())
         
-        # Encrypt the message
         super().log_message(message_send, log_file_name)
-        enc_msg = self.xor(message_send[:-1], self.key) + b"."
+
+        # Encrypt the message
+        for i in range(len_msg):
+            enc_msg[i] = enc_msg[i] ^ ord(self.key[i % key_len])
         
         start = time.time()
         for byte in enc_msg:
@@ -40,10 +38,12 @@ class MyCovertChannel(CovertChannelBase):
         msg = 0
         ctr = 0
         stop_sniffing = False
+        curr_index = 0
+        key_len = len(self.key)
 
         def packet_handler(packet):
-            nonlocal message_receive, msg, ctr, stop_sniffing
-
+            nonlocal message_receive, msg, ctr, stop_sniffing, curr_index
+            
             if packet.haslayer(IP) and packet[IP].src == source_ip:
                 print(f"Packet flags: {packet[IP].flags}")
                 dont_fragment_flag = (packet[IP].flags & 0x2) >> 1
@@ -52,7 +52,9 @@ class MyCovertChannel(CovertChannelBase):
                 if ctr < 8:
                     msg *= 2
                 elif ctr == 8:
-                    message_receive += bytes([msg])
+                    #Decrypt the message
+                    message_receive += bytes([msg ^ ord(self.key[curr_index % key_len])])
+                    curr_index += 1
                     msg = 0
                     ctr = 0
                     if message_receive.endswith(b"."):
@@ -63,8 +65,6 @@ class MyCovertChannel(CovertChannelBase):
 
         sniff(filter=f"ip src {source_ip}", prn=packet_handler, stop_filter=stop_filter)
 
-        # Decrypt the received message
-        decrypted_message = self.xor(message_receive[:-1], self.key).decode() + "."
-        self.log_message(decrypted_message, log_file_name)
+        self.log_message(message_receive.decode(), log_file_name)
 
         return message_receive
