@@ -4,6 +4,7 @@ import time
 
 class MyCovertChannel(CovertChannelBase):
     def __init__(self):
+        self.key = "M3t0C3ng" # Encryption key
         super().__init__()
 
     def xor(self, inp_str, key):
@@ -18,7 +19,7 @@ class MyCovertChannel(CovertChannelBase):
         
         # Encrypt the message
         super().log_message(message_send, log_file_name) # Log encrypted message as hex for clarity
-        enc_msg = self.xor(message_send[:-1], "key") + b"."
+        enc_msg = self.xor(message_send[:-1], self.key) + b"."
         
         start = time.time()
         for byte in enc_msg:
@@ -63,7 +64,7 @@ class MyCovertChannel(CovertChannelBase):
         sniff(filter=f"ip src {source_ip}", prn=packet_handler, stop_filter=stop_filter)
 
         # Decrypt the received message
-        decrypted_message = self.xor(message_receive[:-1], "key").decode() + "."
+        decrypted_message = self.xor(message_receive[:-1], self.key).decode() + "."
         self.log_message(decrypted_message, log_file_name)
 
         return message_receive
