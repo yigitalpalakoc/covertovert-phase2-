@@ -14,10 +14,10 @@ class MyCovertChannel(CovertChannelBase):
         for letter in message_send:
             bin_letter = ord(letter)
             for i in range (0, 8):
-                dont_fragment = bin_letter & 0b10000000
-                dont_fragment = dont_fragment >> 6
+                flags = bin_letter & 0b10000000
+                flags = flags >> 6
                 bin_letter = bin_letter << 1
-                packet = IP(dst=destination_ip, flags=dont_fragment) / IP()
+                packet = IP(dst=destination_ip, flags=flags) / IP()
                 super().send(packet, interface="eth0")
                 time.sleep(delay/1000)
         end = time.time()
@@ -38,7 +38,7 @@ class MyCovertChannel(CovertChannelBase):
                 msg += dont_fragment_flag
                 ctr += 1
                 if ctr < 8:
-                    msg *= 2
+                    msg << 1
                 elif ctr == 8:
                     letter = chr(msg)
                     # print(msg)
